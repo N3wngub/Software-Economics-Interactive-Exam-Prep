@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Engineering Economics - Interactive Study Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background-color: #f8fafc; /* Slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+        /* Soft Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animation Classes */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-down { animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Input Focus */
+        .input-soft:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: #818cf8;
+        }
+        
+        /* Flashcard Transitions */
+        .card-enter { animation: cardEnter 0.3s ease-out forwards; }
+        @keyframes cardEnter { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Shake Animation for wrong answer */
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
+        /* Kahoot Style Buttons */
+        .kahoot-btn {
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .kahoot-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+        .kahoot-btn:active {
+            transform: translateY(0);
+        }
+        .kahoot-btn.selected {
+            border: 4px solid #ffffff;
+            box-shadow: 0 0 0 4px #4f46e5; /* Indigo ring outside */
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        .kahoot-btn.correct-answer {
+            opacity: 1 !important;
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
+            border: 4px solid #ffffff;
+        }
+        .kahoot-btn.wrong-answer {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .kahoot-btn.dimmed {
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body class="text-slate-600 min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-700">
+
+    <!-- Header / Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                        <span class="text-xl">📊</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800 tracking-tight">Software Economics</h1>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Interactive Exam Prep</p>
+                    </div>
+                </div>
+                
+                <nav class="flex p-1 bg-slate-100/80 rounded-2xl border border-slate-200/50">
+                    <button onclick="switchTab('formulas')" id="nav-formulas" class="px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm bg-white text-indigo-600">
+                        สูตรคำนวณ
+                    </button>
+                    <button onclick="switchTab('exam')" id="nav-exam" class="px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50">
+                        ตะลุยโจทย์ (Flashcards)
+                    </button>
+                    <button onclick="switchTab('simulators')" id="nav-simulators" class="px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50">
+                        ห้องทดลองกราฟ
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-5xl mx-auto w-full p-4 sm:p-6 md:py-8 space-y-8">
+
+        <!-- SECTION 1: Formula Sheet -->
+        <section id="formulas-section" class="tab-content fade-in block">
+            <div class="flex items-start gap-4 mb-8 bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100">
+                <div class="p-3 bg-white rounded-2xl shadow-sm text-2xl">📐</div>
+                <div>
+                    <h2 class="text-lg font-bold text-indigo-900">สรุปสูตรคำนวณ (Formula Sheet)</h2>
+                    <p class="text-sm text-indigo-600/80 mt-1">
+                        รวบรวมสูตรสำคัญทั้งหมดสำหรับการสอบ อนุญาตให้ใช้งานได้ระหว่างการทำแบบทดสอบ
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Break-Even Card -->
+                <div class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
+                        <h3 class="font-bold text-slate-800">1. Break-Even</h3>
+                        <span class="text-xs font-semibold bg-rose-100 text-rose-600 px-2 py-1 rounded-lg">จุดคุ้มทุน</span>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-colors">
+                            <span class="block text-xs font-semibold text-slate-400 mb-1 uppercase">สมการรายได้ = ต้นทุน</span>
+                            <code class="text-indigo-600 font-mono font-bold text-base">P × Q = FC + (Q × V)</code>
+                        </div>
+                        <div>
+                            <span class="block font-medium text-slate-600 mb-1">จุดคุ้มทุน (Q*):</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono">Q* = FC / (P - V)</code>
+                        </div>
+                        <div>
+                            <span class="block font-medium text-slate-600 mb-1">เป้าหมายกำไร:</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono">Q = (FC + Profit) / (P - V)</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High-Low Method Card -->
+                <div class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
+                        <h3 class="font-bold text-slate-800">2. High-Low Method</h3>
+                        <span class="text-xs font-semibold bg-amber-100 text-amber-600 px-2 py-1 rounded-lg">ประมาณการ</span>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <span class="block font-medium text-slate-600 mb-1">ต้นทุนแปรผัน (b):</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono text-xs break-all">b = (Cost_high - Cost_low) / (Unit_high - Unit_low)</code>
+                        </div>
+                        <div>
+                            <span class="block font-medium text-slate-600 mb-1">ต้นทุนคงที่ (a):</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono">a = TotalCost - (b × Unit)</code>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 group-hover:border-amber-100 group-hover:bg-amber-50/30 transition-colors">
+                            <span class="block text-xs font-semibold text-slate-400 mb-1 uppercase">สมการต้นทุนรวม (Y)</span>
+                            <code class="text-amber-600 font-mono font-bold text-base">Y = a + bX</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EVM Basics Card -->
+                <div class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
+                        <h3 class="font-bold text-slate-800">3. EVM Basics</h3>
+                        <span class="text-xs font-semibold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg">มูลค่างาน</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-500 font-medium">PV (Planned)</span>
+                            <span class="font-mono text-indigo-600 bg-indigo-50 px-2 rounded">BAC × %Plan</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-500 font-medium">EV (Earned)</span>
+                            <span class="font-mono text-emerald-600 bg-emerald-50 px-2 rounded">BAC × %Done</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-t border-slate-50 mt-1 pt-2">
+                            <span class="text-slate-500 font-medium">SV (Time)</span>
+                            <span class="font-mono text-slate-700">EV - PV</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-slate-500 font-medium">CV (Cost)</span>
+                            <span class="font-mono text-slate-700">EV - AC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EVM Forecasting Card -->
+                <div class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
+                        <h3 class="font-bold text-slate-800">4. Forecasting</h3>
+                        <span class="text-xs font-semibold bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">พยากรณ์</span>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-50 p-2 rounded-xl text-center">
+                                <div class="text-xs text-slate-400 mb-1">เวลา (SPI)</div>
+                                <code class="font-bold text-blue-600">EV / PV</code>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-xl text-center">
+                                <div class="text-xs text-slate-400 mb-1">งบ (CPI)</div>
+                                <code class="font-bold text-blue-600">EV / AC</code>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50/30 transition-colors">
+                            <span class="block text-xs font-semibold text-slate-400 mb-1 uppercase">งบจบโครงการ (EAC)</span>
+                            <code class="text-blue-600 font-mono font-bold text-base">EAC = BAC / CPI</code>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Economic Efficiency Card -->
+                 <div class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
+                        <h3 class="font-bold text-slate-800">5. Economics</h3>
+                        <span class="text-xs font-semibold bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">เศรษฐศาสตร์</span>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <span class="block font-medium text-slate-600 mb-1">ประสิทธิภาพ (Efficiency):</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono">(Output / Input) × 100</code>
+                        </div>
+                        <div>
+                            <span class="block font-medium text-slate-600 mb-1">ROI (%):</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono">((Gain - Cost) / Cost) × 100</code>
+                        </div>
+                         <div>
+                            <span class="block font-medium text-slate-600 mb-1">Payback Period:</span>
+                            <code class="block bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 text-slate-700 font-mono">Investment / Monthly Saving</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Flashcard Exam System -->
+        <section id="exam-section" class="tab-content hidden fade-in">
+            <!-- Menu View -->
+            <div id="exam-menu" class="block">
+                <div class="text-center mb-10">
+                    <div class="inline-block p-4 bg-white rounded-full shadow-md mb-4 text-4xl">🎓</div>
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">เลือกชุดข้อสอบ</h2>
+                    <p class="text-slate-500">เลือกชุดโจทย์ที่คุณต้องการฝึกฝน (โจทย์วิเคราะห์สถานการณ์)</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                    <!-- Set 1 -->
+                    <button onclick="startExam('set1')" class="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left">
+                        <div class="absolute top-4 right-4 bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-lg">5 ข้อ</div>
+                        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">⚡</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">ชุดที่ 1: พื้นฐาน</h3>
+                        <p class="text-sm text-slate-500">Break-Even, High-Low, EVM เบื้องต้น</p>
+                    </button>
+
+                    <!-- Set 2 -->
+                    <button onclick="startExam('set2')" class="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left">
+                        <div class="absolute top-4 right-4 bg-indigo-100 text-indigo-600 text-xs font-bold px-2 py-1 rounded-lg">15 ข้อ</div>
+                        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">📚</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">ชุดที่ 2: ครบเครื่อง</h3>
+                        <p class="text-sm text-slate-500">เศรษฐศาสตร์, ต้นทุน, EVM, Process</p>
+                    </button>
+
+                    <!-- Set 3 -->
+                    <button onclick="startExam('set3')" class="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left">
+                        <div class="absolute top-4 right-4 bg-purple-100 text-purple-600 text-xs font-bold px-2 py-1 rounded-lg">20 ข้อ</div>
+                        <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">ชุดที่ 3: ขั้นสูง</h3>
+                        <p class="text-sm text-slate-500">ROI, TCO, COCOMO, Make/Buy</p>
+                    </button>
+
+                    <!-- All Sets -->
+                    <button onclick="startExam('all')" class="group relative bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left">
+                        <div class="absolute top-4 right-4 bg-white/20 text-white text-xs font-bold px-2 py-1 rounded-lg">40 ข้อ</div>
+                        <div class="w-12 h-12 bg-white/10 text-white rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">🔥</div>
+                        <h3 class="text-lg font-bold text-white mb-1">รวมทุกชุด (Marathon)</h3>
+                        <p class="text-sm text-slate-300">ทดสอบความพร้อมก่อนสอบจริง</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flashcard Runner View -->
+            <div id="exam-runner" class="hidden max-w-3xl mx-auto">
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-end mb-2">
+                        <button onclick="exitExam()" class="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors">
+                            <span>←</span> ออกจากแบบทดสอบ
+                        </button>
+                        <span class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                            ข้อที่ <span id="current-q-num">1</span> / <span id="total-q-num">10</span>
+                        </span>
+                    </div>
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-500 ease-out" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Card -->
+                <div id="flashcard" class="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden min-h-[400px] flex flex-col relative card-enter">
+                    
+                    <!-- Question Area -->
+                    <div class="p-8 md:p-10 flex-grow">
+                        <div class="mb-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <span id="q-category" class="inline-block px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500">หมวดหมู่</span>
+                                <button onclick="toggleHint()" class="text-amber-500 hover:text-amber-600 text-sm font-bold flex items-center gap-1 transition-colors bg-amber-50 px-3 py-1 rounded-lg hover:bg-amber-100">
+                                    💡 ดูใบ้สูตร (Hint)
+                                </button>
+                            </div>
+
+                            <!-- Hint Display Area -->
+                            <div id="hint-area" class="hidden mb-4 p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-sm animate-fade-in">
+                                <span class="font-bold block mb-1">💡 Hint / สูตรที่ใช้:</span>
+                                <div id="hint-text" class="font-mono text-amber-700"></div>
+                            </div>
+
+                            <h3 id="q-text" class="text-lg md:text-xl font-bold text-slate-800 leading-relaxed">
+                                <!-- Question Text injected here -->
+                            </h3>
+                        </div>
+
+                        <!-- User Input Area -->
+                        <div class="mt-8" id="input-container">
+                            <!-- Dynamic Input injected here -->
+                        </div>
+                        
+                        <div id="feedback-msg" class="mt-4 text-center text-lg font-bold hidden p-3 rounded-lg shadow-sm"></div>
+                    </div>
+
+                    <!-- Answer Area (Hidden initially) -->
+                    <div id="answer-area" class="hidden bg-slate-50 border-t border-slate-100 p-8 md:p-10 slide-down">
+                        <h4 class="flex items-center gap-2 text-indigo-700 font-bold mb-3">
+                            <span class="bg-indigo-100 w-6 h-6 rounded-full flex items-center justify-center text-sm">i</span> 
+                            เฉลย / แนวคิด
+                        </h4>
+                        <div id="a-text" class="text-slate-700 text-sm md:text-base leading-relaxed space-y-2">
+                            <!-- Answer Text injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Footer Controls -->
+                    <div class="bg-slate-50 p-4 md:p-6 border-t border-slate-100 flex justify-between items-center gap-3">
+                        <button id="btn-prev" onclick="prevQuestion()" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="ย้อนกลับ">
+                            ←
+                        </button>
+
+                        <button id="btn-check" onclick="checkAnswer()" class="flex-1 bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 font-bold py-3 rounded-xl transition-all shadow-sm">
+                            ✨ ตรวจคำตอบ
+                        </button>
+                        
+                        <button id="btn-next" onclick="nextQuestion()" class="flex-1 bg-slate-800 text-white hover:bg-slate-900 font-bold py-3 rounded-xl transition-all shadow-lg shadow-slate-200 hidden">
+                            ข้อถัดไป →
+                        </button>
+
+                        <button id="btn-skip" onclick="skipQuestion()" class="px-4 py-3 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 font-medium transition-all" title="ข้ามข้อนี้">
+                            ข้าม
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+             <!-- Completion View -->
+             <div id="exam-complete" class="hidden text-center max-w-xl mx-auto py-10">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-lg shadow-green-100">🎉</div>
+                <h2 class="text-3xl font-bold text-slate-800 mb-4">ยอดเยี่ยมมาก!</h2>
+                <p class="text-slate-500 mb-8">คุณทำแบบทดสอบครบทุกข้อแล้ว อย่าลืมทบทวนข้อที่ยังไม่แม่นยำนะครับ</p>
+                <button onclick="exitExam()" class="bg-indigo-600 text-white hover:bg-indigo-700 font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all">
+                    กลับไปหน้าเมนูหลัก
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Simulators -->
+        <section id="simulators-section" class="tab-content hidden fade-in">
+            <div class="flex items-start gap-4 mb-8 bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100">
+                <div class="p-3 bg-white rounded-2xl shadow-sm text-2xl">📊</div>
+                <div>
+                    <h2 class="text-lg font-bold text-emerald-900">ห้องทดลองจำลองกราฟ (Visual Simulators)</h2>
+                    <p class="text-sm text-emerald-700 mt-1">
+                        ปรับค่าตัวแปรเพื่อดูความสัมพันธ์ของตัวเลขในรูปแบบกราฟิก
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Simulator 1: Break-Even -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 hover:shadow-lg transition-shadow duration-300">
+                    <h3 class="font-bold text-lg text-slate-800 mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-sm">🏷️</span> 
+                        Break-Even Analysis
+                    </h3>
+                    
+                    <!-- Controls -->
+                    <div class="space-y-6 mb-8 bg-slate-50/80 p-6 rounded-2xl border border-slate-100">
+                        <div>
+                            <label class="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2">
+                                <span>Fixed Cost</span>
+                                <span id="val-fc" class="text-indigo-600 font-mono">200,000</span>
+                            </label>
+                            <input type="range" id="input-fc" min="50000" max="500000" step="10000" value="200000" class="w-full accent-indigo-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2">
+                                <span>Price / Unit</span>
+                                <span id="val-p" class="text-indigo-600 font-mono">100</span>
+                            </label>
+                            <input type="range" id="input-p" min="50" max="500" step="10" value="100" class="w-full accent-indigo-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2">
+                                <span>Variable Cost</span>
+                                <span id="val-v" class="text-indigo-600 font-mono">20</span>
+                            </label>
+                            <input type="range" id="input-v" min="10" max="100" step="5" value="20" class="w-full accent-indigo-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="pt-4 border-t border-slate-200 mt-2 flex justify-between items-center">
+                            <span class="text-sm font-medium text-slate-600">จุดคุ้มทุน (Units)</span>
+                            <span id="result-bep" class="text-2xl font-bold text-emerald-500 bg-white px-3 py-1 rounded-lg border border-slate-100 shadow-sm">2,500</span>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="chart-container rounded-xl overflow-hidden border border-slate-50 p-2">
+                        <canvas id="beChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Simulator 2: EVM Dashboard -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 hover:shadow-lg transition-shadow duration-300">
+                    <h3 class="font-bold text-lg text-slate-800 mb-6 flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm">⏱️</span> 
+                        EVM Project Tracking
+                    </h3>
+
+                    <!-- Controls -->
+                    <div class="space-y-6 mb-8 bg-slate-50/80 p-6 rounded-2xl border border-slate-100">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Budget (BAC)</label>
+                                <input type="number" id="input-bac" value="500000" class="input-soft block w-full rounded-lg border-slate-200 bg-white py-1.5 px-3 text-sm text-right font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Actual (AC)</label>
+                                <input type="number" id="input-ac" value="180000" class="input-soft block w-full rounded-lg border-slate-200 bg-white py-1.5 px-3 text-sm text-right font-medium">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2">
+                                <span>Progress (Planned)</span>
+                                <span id="val-planned" class="text-indigo-600 font-mono">40%</span>
+                            </label>
+                            <input type="range" id="input-planned" min="0" max="100" value="40" class="w-full accent-indigo-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2">
+                                <span>Progress (Actual)</span>
+                                <span id="val-complete" class="text-indigo-600 font-mono">30%</span>
+                            </label>
+                            <input type="range" id="input-complete" min="0" max="100" value="30" class="w-full accent-indigo-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        
+                        <div class="flex gap-4 pt-4 border-t border-slate-200 mt-2">
+                            <div class="flex-1 bg-white p-3 rounded-xl border border-slate-100 text-center shadow-sm">
+                                <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">SPI (Time)</p>
+                                <p id="result-spi" class="font-bold text-lg text-rose-500 font-mono">0.75</p>
+                            </div>
+                            <div class="flex-1 bg-white p-3 rounded-xl border border-slate-100 text-center shadow-sm">
+                                <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">CPI (Cost)</p>
+                                <p id="result-cpi" class="font-bold text-lg text-rose-500 font-mono">0.83</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="chart-container rounded-xl overflow-hidden border border-slate-50 p-2">
+                        <canvas id="evmChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-8 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <p class="text-sm font-semibold text-slate-700">© 2024 Software Engineering Economics</p>
+            <p class="mt-2 text-xs text-slate-400">Designed for interactive learning</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- Questions Data (Enhanced with Scenarios, Types, and HINTS) ---
+        const questionsDB = {
+            set1: [
+                { 
+                    id: 101, 
+                    type: "number", 
+                    category: "Break-Even", 
+                    q: "บริษัทซอฟต์แวร์แห่งหนึ่งมีภาระค่าใช้จ่ายรายเดือน (ค่าเช่า, เงินเดือน) ที่ต้องจ่ายแน่นอนไม่ว่าจะขายของได้หรือไม่รวม 200,000 บาท หากบริษัทขายลิขสิทธิ์ซอฟต์แวร์ในราคาชุดละ 100 บาท โดยมีต้นทุนค่าแผ่นและกล่องคู่มือต่อชุดอยู่ที่ 20 บาท <br><b>คำถาม:</b> ต้องขายให้ได้กี่ชุดจึงจะไม่ขาดทุน?", 
+                    hint: "Q* = FC / (P - V) <br>จุดคุ้มทุน = ต้นทุนคงที่ / (ราคา - ต้นทุนแปรผัน)",
+                    correctVal: 2500,
+                    unit: "ชุด",
+                    a: "<b>วิธีทำ:</b><br>Q* = FC / (P - V)<br>Q* = 200,000 / (100 - 20)<br>Q* = 200,000 / 80 = <b>2,500 ชุด</b>" 
+                },
+                { 
+                    id: 102, 
+                    type: "number", 
+                    category: "Target Profit", 
+                    q: "จากสถานการณ์เดิม (FC=200k, P=100, V=20) หากผู้บริหารตั้งเป้าหมายว่าเดือนนี้ต้องมีกำไรเข้าบริษัท 120,000 บาท <br><b>คำถาม:</b> ทีมเซลล์ต้องขายซอฟต์แวร์ให้ได้ทั้งหมดกี่ชุด?", 
+                    hint: "Q = (FC + Profit) / (P - V) <br>รวมต้นทุนคงที่กับกำไรที่ต้องการ แล้วหารด้วยกำไรต่อหน่วย",
+                    correctVal: 4000, 
+                    unit: "ชุด",
+                    a: "<b>วิธีทำ:</b><br>Q = (FC + Profit) / (P - V)<br>Q = (200,000 + 120,000) / 80<br>Q = 320,000 / 80 = <b>4,000 ชุด</b>" 
+                },
+                { 
+                    id: 103, 
+                    type: "number", 
+                    category: "High-Low Method", 
+                    q: "จากการเก็บข้อมูลค่าไฟของ Server Room ในช่วง 6 เดือนที่ผ่านมา พบว่าเดือนที่มียอดผู้ใช้งานสูงสุด 10,000 คน มีค่าไฟ 80,000 บาท ส่วนเดือนที่มียอดผู้ใช้งานต่ำสุด 4,000 คน มีค่าไฟ 50,000 บาท <br><b>คำถาม:</b> อยากทราบว่า ต้นทุนแปรผันต่อผู้ใช้ 1 คน (Variable Cost per Unit) คือกี่บาท?", 
+                    hint: "b = (Cost_High - Cost_Low) / (Unit_High - Unit_Low) <br>ผลต่างของต้นทุน หารด้วย ผลต่างของจำนวนหน่วย",
+                    correctVal: 5, 
+                    unit: "บาท/คน",
+                    a: "<b>วิธีทำ:</b><br>b = (Cost_High - Cost_Low) / (Unit_High - Unit_Low)<br>b = (80,000 - 50,000) / (10,000 - 4,000)<br>b = 30,000 / 6,000 = <b>5 บาท/คน</b>" 
+                },
+                { 
+                    id: 104, 
+                    type: "number", 
+                    category: "EVM Calculation", 
+                    q: "โครงการพัฒนาแอปฯ มีงบประมาณรวมทั้งโครงการ 500,000 บาท ณ ปัจจุบัน ตามแผนงานที่วางไว้ควรจะทำงานเสร็จสิ้นคิดเป็นมูลค่า 40% ของโครงการ แต่เมื่อประเมินหน้างานจริงพบว่าทีมงานทำเสร็จได้เพียง 30% ของโครงการ <br><b>คำถาม:</b> จงคำนวณค่าความเบี่ยงเบนทางเวลา (SV) ว่าเป็นเท่าไหร่ (ใส่เครื่องหมายลบหากติดลบ)", 
+                    hint: "SV = EV - PV <br>SV = มูลค่างานที่ทำได้จริง - มูลค่างานตามแผน <br>PV = BAC × %Planned, EV = BAC × %Complete",
+                    correctVal: -50000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>PV = 500,000 × 40% = 200,000<br>EV = 500,000 × 30% = 150,000<br>SV = EV - PV = 150,000 - 200,000 = <b>-50,000 บาท</b> (ล่าช้า)" 
+                },
+                { 
+                    id: 105, 
+                    type: "number", 
+                    category: "EVM Forecasting", 
+                    q: "จากสถานการณ์ข้อที่แล้ว หากคำนวณได้ค่าประสิทธิภาพด้านต้นทุน (CPI) เท่ากับ 0.8333 <br><b>คำถาม:</b> คาดการณ์ว่าเมื่อจบโครงการจะต้องใช้งบประมาณรวมทั้งหมด (EAC) ประมาณเท่าไหร่? (ตอบจำนวนเต็ม)", 
+                    hint: "EAC = BAC / CPI <br>งบประมาณคาดการณ์ = งบตั้งต้น / ประสิทธิภาพต้นทุน",
+                    correctVal: 600000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>EAC = BAC / CPI<br>EAC = 500,000 / 0.8333...<br>EAC ≈ <b>600,000 บาท</b>" 
+                }
+            ],
+            set2: [
+                { 
+                    id: 201, 
+                    type: "number", 
+                    category: "Economics", 
+                    q: "ทีม DevOps ลงทุนซื้อเครื่องมือ Automation ราคา 500,000 บาท (Input) ซึ่งช่วยลดเวลาการทำงานและสร้างมูลค่ากลับคืนมาให้บริษัทได้คิดเป็นเงิน 750,000 บาท (Output/Benefit) <br><b>คำถาม:</b> โครงการนี้มีประสิทธิภาพเชิงเศรษฐศาสตร์ (Efficiency) กี่เปอร์เซ็นต์?", 
+                    hint: "Efficiency = (Output / Input) × 100",
+                    correctVal: 150, 
+                    unit: "%",
+                    a: "<b>วิธีทำ:</b><br>Efficiency = (Output / Input) × 100<br>= (750,000 / 500,000) × 100 = <b>150%</b>" 
+                },
+                { 
+                    id: 202, 
+                    type: "number", 
+                    category: "Mass Production", 
+                    q: "โรงงานผลิตชิปมีค่าเช่าเครื่องจักรเดือนละ 20,000 บาท (FC) และต้นทุนวัสดุชิ้นละ 50 บาท (VC) <br><b>คำถาม:</b> หากผลิต 1,000 ชิ้น ต้นทุนเฉลี่ยต่อชิ้นจะสูงกว่าตอนผลิต 5,000 ชิ้น อยู่กี่บาท?", 
+                    hint: "หาต้นทุนเฉลี่ยของทั้งสองกรณี แล้วนำมาลบกัน <br>Avg Cost = (FC + (Q × VC)) / Q",
+                    correctVal: 16, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>1,000 ชิ้น: (20k + 50k)/1k = 70 บ./ชิ้น<br>5,000 ชิ้น: (20k + 250k)/5k = 54 บ./ชิ้น<br>ส่วนต่าง = 70 - 54 = <b>16 บาท</b> (ผลิตเยอะต้นทุนต่อหน่วยถูกลง)" 
+                },
+                { 
+                    id: 203, 
+                    type: "choice", 
+                    category: "Sunk Cost", 
+                    q: "คุณจ่ายเงินค่าจ้างกราฟิกไปแล้ว 1 ล้านบาทเพื่อทำเกม แต่ผลทดสอบตลาดออกมาแย่มาก เพื่อนบอกว่า 'ต้องทำต่อให้เสร็จนะ เสียดายเงินล้านนึงที่จ่ายไป' <br><b>คำถาม:</b> ในทางเศรษฐศาสตร์ เงิน 1 ล้านบาทนี้เรียกว่าอะไร?", 
+                    hint: "ต้นทุนที่เกิดขึ้นในอดีตและไม่สามารถเรียกคืนได้",
+                    options: ["Opportunity Cost", "Fixed Cost", "Sunk Cost", "Variable Cost"],
+                    correctIndex: 2, 
+                    a: "<b>เฉลย:</b> เรียกว่า <b>Sunk Cost (ต้นทุนจม)</b><br><b>ไม่ควร</b> นำมาพิจารณาในการตัดสินใจ เพราะเป็นเงินที่จ่ายไปแล้วเรียกคืนไม่ได้ การตัดสินใจควรดูแค่ต้นทุนที่จะเกิดขึ้นใหม่ในอนาคตเทียบกับรายได้ที่จะได้รับ" 
+                },
+                { 
+                    id: 204, 
+                    type: "number", 
+                    category: "Opportunity Cost", 
+                    q: "นาย A มีเวลาว่าง 1 ชม. ทางเลือกที่ 1 คือรับจ้างเขียนโค้ดได้เงิน 500 บาท ทางเลือกที่ 2 คือนอนดู Netflix (ไม่ได้เงิน) <br><b>คำถาม:</b> ถ้านาย A เลือกนอนดู Netflix ต้นทุนค่าเสียโอกาส (Opportunity Cost) ของเขาคือเท่าไหร่?", 
+                    hint: "มูลค่าของ 'ทางเลือกที่ดีที่สุด' ที่เราไม่ได้เลือก",
+                    correctVal: 500, 
+                    unit: "บาท",
+                    a: "<b>เฉลย:</b> <b>500 บาท</b><br>เพราะ Opportunity Cost คือมูลค่าของทางเลือกที่ดีที่สุดที่เราสละไป (ในที่นี้คือเงินค่าจ้างที่อดได้)" 
+                },
+                { 
+                    id: 205, 
+                    type: "number", 
+                    category: "Break-Even Point", 
+                    q: "บริษัทขายซอฟต์แวร์ ERP แบบซื้อขาด มีค่าใช้จ่ายประจำเดือน (ค่าเช่า, เงินเดือนแอดมิน) รวม 100,000 บาท การขายแต่ละชุดบริษัทต้องจ่ายค่านายหน้าและค่าแพ็คเกจรวม 1,000 บาท หากตั้งราคาขายไว้ที่ชุดละ 5,000 บาท <br><b>คำถาม:</b> เดือนนี้ต้องขายให้ได้กี่ชุดจึงจะเริ่มมีกำไร (คุ้มทุน)?", 
+                    hint: "Q* = FC / (P - V)",
+                    correctVal: 25, 
+                    unit: "ชุด",
+                    a: "<b>วิธีทำ:</b><br>Q* = 100,000 / (5,000 - 1,000)<br>Q* = 100,000 / 4,000 = <b>25 ชุด</b>" 
+                },
+                { 
+                    id: 206, 
+                    type: "number", 
+                    category: "Target Profit", 
+                    q: "จากสถานการณ์ขายโปรแกรม ERP เดิม (FC=100k, P=5k, V=1k) ถ้าเจ้าของบริษัทอยากได้กำไรเข้ากระเป๋าเดือนละ 200,000 บาท <br><b>คำถาม:</b> ต้องขายให้ได้กี่ชุด?", 
+                    hint: "Q = (FC + Profit) / (P - V)",
+                    correctVal: 75, 
+                    unit: "ชุด",
+                    a: "<b>วิธีทำ:</b><br>Q = (100,000 + 200,000) / 4,000<br>Q = 300,000 / 4,000 = <b>75 ชุด</b>" 
+                },
+                { 
+                    id: 207, 
+                    type: "number", 
+                    category: "Pricing", 
+                    q: "บริษัทคำนวณต้นทุนการผลิตแอปฯ เฉลี่ยอยู่ที่ 200 บาท/user หากต้องการกำไร (Profit Margin) 40% ของต้นทุน <br><b>คำถาม:</b> ต้องตั้งราคาขาย user ละกี่บาท?", 
+                    hint: "Price = Cost + (Margin % × Cost)",
+                    correctVal: 280, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>Price = Cost + (40% × Cost)<br>Price = 200 + (0.40 × 200)<br>Price = 200 + 80 = <b>280 บาท</b>" 
+                },
+                { 
+                    id: 208, 
+                    type: "number", 
+                    category: "EVM Status", 
+                    q: "ได้รับงบประมาณทำเว็บไซต์ E-commerce มาทั้งสิ้น 200,000 บาท ตามตารางงานสัปดาห์นี้ควรจะส่งมอบงานได้ครึ่งหนึ่ง (50%) ของโครงการแล้ว แต่เมื่อเช็คลิสต์งานที่ทำเสร็จจริง พบว่าทำเสร็จไปเพียง 40% ของงานทั้งหมด <br><b>คำถาม:</b> มูลค่าความเสียหายด้านเวลา (Schedule Variance - SV) เป็นกี่บาท? (ตอบติดลบถ้าล่าช้า)", 
+                    hint: "SV = EV - PV <br>PV = BAC × %Planned, EV = BAC × %Complete",
+                    correctVal: -20000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>PV = 200k×50% = 100k<br>EV = 200k×40% = 80k<br>SV = 80k - 100k = <b>-20,000 บาท</b> (ล่าช้า)" 
+                },
+                { 
+                    id: 209, 
+                    type: "choice", 
+                    category: "EVM Analysis", 
+                    q: "จากข้อที่แล้ว (EV=80k) หากพบว่าจ่ายเงินจริง (AC) ไปแล้ว 90,000 บาท ลองคำนวณค่า CPI แล้วบอกว่าโครงการนี้มีสถานะอย่างไร?", 
+                    hint: "CPI = EV / AC <br>ถ้าค่า CPI < 1 แปลว่าใช้งบเกินประสิทธิภาพ",
+                    options: ["Over Budget (ใช้งบเกิน)", "Under Budget (ประหยัดงบ)", "On Budget (ตรงตามงบ)"],
+                    correctIndex: 0, 
+                    a: "<b>เฉลย:</b> <b>Over Budget (ใช้งบเกิน)</b><br>CPI = EV / AC = 80,000 / 90,000 = 0.89<br>ค่า CPI ต่ำกว่า 1 แสดงว่าใช้งบประมาณเกินกว่างานที่ได้" 
+                },
+                { 
+                    id: 210, 
+                    type: "number", 
+                    category: "EVM Forecast", 
+                    q: "โครงการงบ 1,000,000 บาท ทำงานมาครึ่งทางพบว่าประสิทธิภาพ CPI = 0.80 หากประสิทธิภาพยังแย่แบบนี้ต่อไปจนจบ <br><b>คำถาม:</b> คาดว่างบจะบานปลายไปจบที่ยอดรวมเท่าไหร่ (EAC)?", 
+                    hint: "EAC = BAC / CPI",
+                    correctVal: 1250000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>EAC = BAC / CPI<br>EAC = 1,000,000 / 0.80 = <b>1,250,000 บาท</b>" 
+                },
+                { 
+                    id: 211, 
+                    type: "number", 
+                    category: "Percent Complete", 
+                    q: "โครงการงบ 600,000 บาท ปัจจุบันส่งมอบงานที่มีมูลค่า (EV) ไปแล้ว 150,000 บาท <br><b>คำถาม:</b> คิดเป็นความคืบหน้ากี่เปอร์เซ็นต์?", 
+                    hint: "%Complete = (EV / BAC) × 100",
+                    correctVal: 25, 
+                    unit: "%",
+                    a: "<b>วิธีทำ:</b><br>%Complete = (EV / BAC) × 100<br>= (150,000 / 600,000) × 100 = <b>25%</b>" 
+                },
+                { 
+                    id: 212, 
+                    type: "choice", 
+                    category: "Software Selection", 
+                    q: "บริษัทต้องการระบบบัญชีด่วนเพื่อส่งงบสรรพากร งบจำกัด ไม่ต้องการฟีเจอร์แปลกพิสดารอะไร <br><b>คำถาม:</b> ควรเลือกซอฟต์แวร์ประเภทใด?", 
+                    hint: "พิจารณาเรื่อง: เวลาในการเริ่มใช้ (Time to market) และ ราคา (Cost)",
+                    options: ["Generic (สำเร็จรูป)", "Customized (สั่งทำ)"],
+                    correctIndex: 0, 
+                    a: "<b>เฉลย:</b> ควรเลือก <b>Generic (สำเร็จรูป)</b><br>เพราะราคาถูกกว่ามาก ได้มาตรฐานสรรพากรอยู่แล้ว และติดตั้งใช้งานได้ทันที ไม่เสียเวลาพัฒนา" 
+                },
+                { 
+                    id: 213, 
+                    type: "choice", 
+                    category: "Cloud Services", 
+                    q: "บริการอย่าง Google Workspace หรือ Office 365 ที่เราไม่ต้องลงเซิร์ฟเวอร์เอง แต่จ่ายรายเดือนเพื่อใช้ผ่านเน็ต <br><b>คำถาม:</b> เรียกว่าบริการ Cloud รูปแบบใด?", 
+                    hint: "S_ _ S (Software as a Service)",
+                    options: ["IaaS", "PaaS", "SaaS", "Serverless"],
+                    correctIndex: 2, 
+                    a: "<b>เฉลย:</b> <b>SaaS</b> (Software as a Service)" 
+                },
+                { 
+                    id: 214, 
+                    type: "choice", 
+                    category: "Process Model", 
+                    q: "Startup ที่ไอเดียยังไม่นิ่ง เปลี่ยน Requirement บ่อย แต่อยากรีบปล่อยของออกมาให้ลูกค้าลองเล่นก่อน <br><b>คำถาม:</b> ควรใช้ Process Model แบบใด?", 
+                    hint: "โมเดลที่เน้นความยืดหยุ่นและการปรับเปลี่ยน (Adaptive) vs โมเดลที่เน้นวางแผนล่วงหน้า (Predictive)",
+                    options: ["Waterfall", "Agile", "Spiral"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> <b>Agile</b><br>เพราะ Agile ออกแบบมาให้รองรับการเปลี่ยนแปลงได้ตลอดเวลา และเน้นการส่งมอบงานทีละส่วน (Increment) ได้รวดเร็ว" 
+                }
+            ],
+            set3: [
+                { 
+                    id: 301, 
+                    type: "number", 
+                    category: "Cost & Break-Even", 
+                    q: "ร้าน TechShop มีภาระค่าใช้จ่ายคงที่รายเดือน 150,000 บาท สินค้า IoT ที่ขายมีต้นทุนรับมาหน่วยละ 500 บาท และขายออกไปในราคา 2,000 บาท <br><b>คำถาม:</b> หากเจ้าของร้านต้องการเงินเหลือเก็บ (กำไร) ในเดือนนี้ 300,000 บาท ต้องขายให้ได้กี่หน่วย?", 
+                    hint: "Target Unit = (FC + Profit) / (P - V)",
+                    correctVal: 300, 
+                    unit: "หน่วย",
+                    a: "<b>วิธีทำ:</b><br>Q = (150,000 + 300,000) / (2,000 - 500)<br>= 450,000 / 1,500 = <b>300 หน่วย</b>" 
+                },
+                { 
+                    id: 302, 
+                    type: "number", 
+                    category: "Marginal Cost", 
+                    q: "โรงงานผลิตชิ้นส่วนรถยนต์พบว่า เมื่อผลิต 1,000 ชิ้น จะมีต้นทุนรวม 50,000 บาท แต่ถ้าผลิตเพิ่มเป็น 1,001 ชิ้น ต้นทุนรวมจะขยับเป็น 50,045 บาท <br><b>คำถาม:</b> ต้นทุนเพิ่ม (Marginal Cost) ของการผลิตชิ้นที่ 1,001 คือกี่บาท?", 
+                    hint: "MC = ΔCost / ΔQuantity",
+                    correctVal: 45, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>MC = (50,045 - 50,000) / (1,001 - 1,000)<br>= 45 / 1 = <b>45 บาท</b>" 
+                },
+                { 
+                    id: 303, 
+                    type: "number", 
+                    category: "High-Low Method", 
+                    q: "ฝ่าย IT บันทึกข้อมูลค่าซ่อมบำรุงตามชั่วโมงการทำงานเครื่องจักร พบว่าช่วงที่เดินเครื่องหนักสุด 800 ชั่วโมง มีค่าซ่อม 42,000 บาท และช่วงเดินเครื่องเบาสุด 300 ชั่วโมง มีค่าซ่อม 22,000 บาท <br><b>คำถาม:</b> จงคำนวณหาต้นทุนรวม (Total Cost) หากมีการใช้งาน 500 ชั่วโมง", 
+                    hint: "หา b = ΔCost/ΔUnit, หา a = TC - bX, แล้วแทนค่า Y = a + b(500)",
+                    correctVal: 30000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>1. b = (42k-22k)/(800-300) = 20k/500 = 40 บ./ชม.<br>2. a = 42,000 - (40×800) = 10,000 บ.<br>3. Y = 10,000 + 40(500) = 10,000 + 20,000 = <b>30,000 บาท</b>" 
+                },
+                { 
+                    id: 304, 
+                    type: "choice", 
+                    category: "Sunk Cost Decision", 
+                    q: "ลงทุน AI ไปแล้ว 5 ล้านบาท (จ่ายแล้ว) แต่คู่แข่งเปิดตัวของฟรีที่ดีกว่า ผู้บริหารต้องเลือก: <br>A) จ่ายอีก 1 ล้าน ได้คืน 2 ล้าน <br>B) ยกเลิก (จ่าย 0 ได้ 0) <br><b>คำถาม:</b> ควรเลือกทางไหน?", 
+                    hint: "เงินที่จ่ายไปแล้วเรียกคืนไม่ได้ ไม่ควรนำมาคิด ให้ดูที่อนาคต",
+                    options: ["ทางเลือก A (ทำต่อ)", "ทางเลือก B (ยกเลิก)"],
+                    correctIndex: 0, 
+                    a: "<b>เฉลย:</b> ควรเลือก <b>ทางเลือก A</b> (เพราะกำไรส่วนเพิ่ม 1 ล้าน)<br>ส่วนเงิน 5 ล้านบาทเรียกว่า <b>Sunk Cost (ต้นทุนจม)</b> ซึ่งไม่ควรนำมาพิจารณา" 
+                },
+                { 
+                    id: 305, 
+                    type: "choice", 
+                    category: "Cost Types", 
+                    q: "จงระบุประเภทต้นทุนของ 1 และ 2 ตามลำดับ: <br>1. ค่าเช่า Cloud Server รายเดือน (เหมา) <br>2. ค่า License API คิดตามจำนวนครั้งที่เรียก", 
+                    hint: "คงที่ vs แปรผันตามการใช้งาน",
+                    options: ["1=Fixed, 2=Variable", "1=Variable, 2=Fixed", "ทั้งคู่เป็น Fixed", "ทั้งคู่เป็น Variable"],
+                    correctIndex: 0, 
+                    a: "<b>เฉลย:</b><br>1. <b>Fixed Cost</b> (จ่ายเท่าเดิมไม่ว่าจะใช้น้อยหรือมาก)<br>2. <b>Variable Cost</b> (ยิ่งใช้เยอะยิ่งจ่ายเยอะ)" 
+                },
+                { 
+                    id: 306, 
+                    type: "number", 
+                    category: "EVM Status", 
+                    q: "โปรเจกต์ Big Data มีงบก้อนโต 1,000,000 บาท ตามแผนงานเดือนนี้ต้องส่งมอบงานให้ได้มูลค่า 300,000 บาท (30%) แต่ทีมงานทำเสร็จจริงคิดเป็นมูลค่าเพียง 250,000 บาท (25%) และมีการเบิกจ่ายเงินจริงไปแล้ว 300,000 บาท <br><b>คำถาม:</b> จงคำนวณค่า SV (Schedule Variance) (ตอบตัวเลข)", 
+                    hint: "SV = EV - PV (มูลค่าจริง - แผน)",
+                    correctVal: -50000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>PV = 1M × 30% = 300,000<br>EV = 1M × 25% = 250,000<br>SV = 250,000 - 300,000 = <b>-50,000 บาท</b> (ช้ากว่าแผน)<br>CV = 250,000 - 300,000 = <b>-50,000 บาท</b> (เกินงบ)" 
+                },
+                { 
+                    id: 307, 
+                    type: "number", 
+                    category: "EVM Efficiency", 
+                    q: "จากข้อที่แล้ว (PV=300k, EV=250k, AC=300k) <br><b>คำถาม:</b> จงคำนวณค่า CPI (ทศนิยม 2 ตำแหน่ง)", 
+                    hint: "CPI = EV / AC",
+                    correctVal: 0.83, 
+                    unit: "",
+                    a: "<b>วิธีทำ:</b><br>SPI = 250k/300k = <b>0.83</b> (ช้า)<br>CPI = 250k/300k = <b>0.83</b> (เกินงบ)<br>สรุป: ประสิทธิภาพแย่ทั้งคู่" 
+                },
+                { 
+                    id: 308, 
+                    type: "number", 
+                    category: "EVM Forecasting", 
+                    q: "จากข้อที่แล้ว (BAC=1M, CPI=0.8333) <br><b>คำถาม:</b> คาดการณ์งบประมาณเมื่อจบโครงการ (EAC)? (ตอบจำนวนเต็ม)", 
+                    hint: "EAC = BAC / CPI",
+                    correctVal: 1200000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>EAC = 1,000,000 / 0.8333...<br>EAC ≈ <b>1,200,000 บาท</b>" 
+                },
+                { 
+                    id: 309, 
+                    type: "number", 
+                    category: "Variance at Completion", 
+                    q: "จากข้อที่แล้ว (BAC=1M, EAC=1.2M) <br><b>คำถาม:</b> จงหาค่า VAC (ว่างบจะบานปลายหรือเหลือเท่าไหร่)?", 
+                    hint: "VAC = BAC - EAC",
+                    correctVal: -200000, 
+                    unit: "บาท",
+                    a: "<b>วิธีทำ:</b><br>VAC = 1,000,000 - 1,200,000 = <b>-200,000 บาท</b><br>(ติดลบแปลว่างบประมาณไม่พอ/บานปลาย)" 
+                },
+                { 
+                    id: 310, 
+                    type: "choice", 
+                    category: "Percent Spent/Complete", 
+                    q: "จากข้อที่แล้ว (EV=25%, AC=300k, BAC=1M) <br><b>คำถาม:</b> จงเปรียบเทียบ %Spent (PS) กับ %Complete (PC) ว่าสอดคล้องกันหรือไม่?", 
+                    hint: "%Spent = (AC/BAC)×100",
+                    options: ["สอดคล้องกัน (PS = PC)", "ไม่สอดคล้อง (PS > PC ใช้เงินเกินงาน)", "ไม่สอดคล้อง (PS < PC งานเดินเร็วกว่าเงิน)"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b><br>%Spent = 300k/1M = <b>30%</b><br>%Complete = <b>25%</b><br><b>ไม่สอดคล้อง</b> ใช้เงินไป 30% แต่ได้งานแค่ 25% (ประสิทธิภาพต่ำ)" 
+                },
+                { 
+                    id: 311, 
+                    type: "choice", 
+                    category: "Law of Supply", 
+                    q: "หากราคา Bitcoin พุ่งสูงขึ้น ตามกฎของอุปทาน (Law of Supply) ผู้ผลิตเครื่องขุด/เหมืองขุด จะมีพฤติกรรมอย่างไร?", 
+                    hint: "ราคาสูง -> ผู้ผลิตอยากขาย...?",
+                    options: ["ต้องการผลิต/ขายน้อยลง", "ต้องการผลิต/ขายเท่าเดิม", "ต้องการผลิต/ขายมากขึ้น"],
+                    correctIndex: 2, 
+                    a: "<b>เฉลย:</b> <b>ต้องการผลิต/ขายมากขึ้น</b><br>เพราะราคาสูงจูงใจให้ผู้ผลิตเพิ่มกำลังการผลิตเพื่อทำกำไร" 
+                },
+                { 
+                    id: 312, 
+                    type: "choice", 
+                    category: "Market Equilibrium", 
+                    q: "ภาวะ 'สินค้าล้นตลาด' (Excess Supply) เกิดขึ้นเมื่อราคาตลาดเป็นอย่างไรเมื่อเทียบกับราคาดุลยภาพ?", 
+                    hint: "ของเหลือแสดงว่าแพงไปหรือถูกไป?",
+                    options: ["ต่ำกว่าราคาดุลยภาพ", "เท่ากับราคาดุลยภาพ", "สูงกว่าราคาดุลยภาพ"],
+                    correctIndex: 2, 
+                    a: "<b>เฉลย:</b> <b>สูงกว่าราคาดุลยภาพ</b><br>ทำให้คนขายนอยากขายเยอะ แต่คนซื้อไม่อยากซื้อ ของจึงเหลือ" 
+                },
+                { 
+                    id: 313, 
+                    type: "choice", 
+                    category: "Diminishing Returns", 
+                    q: "ในการเขียนโปรแกรม หากเพิ่มคนในทีมจาก 5 เป็น 50 คนในโปรเจกต์เล็กๆ ผลผลิตต่อคนมักจะลดลงเพราะเหตุใด?", 
+                    hint: "คนเยอะ -> คุยเยอะ",
+                    options: ["Hardware Limitation", "Communication Overhead", "Software Complexity", "Network Latency"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> <b>Communication Overhead</b><br>การสื่อสารและการจัดการซับซ้อนขึ้นอย่างทวีคูณ (และแย่งกันใช้ทรัพยากร)" 
+                },
+                { 
+                    id: 314, 
+                    type: "choice", 
+                    category: "Software Types", 
+                    q: "แอปพลิเคชันควบคุมเบรกในรถยนต์อัตโนมัติ จัดเป็นซอฟต์แวร์ประเภทใด?", 
+                    hint: "ฝังอยู่ในฮาร์ดแวร์",
+                    options: ["System Software", "Application Software", "Embedded Software", "Web Application"],
+                    correctIndex: 2, 
+                    a: "<b>เฉลย:</b> <b>Embedded Software (ซอฟต์แวร์ฝังตัว)</b>" 
+                },
+                { 
+                    id: 315, 
+                    type: "choice", 
+                    category: "Service Models", 
+                    q: "บริษัทใช้ Gmail โดยไม่ต้องลง Server เอง จ่ายรายเดือน บริการนี้เรียกว่าอะไร?", 
+                    hint: "ใช้ Software ผ่าน Net",
+                    options: ["IaaS", "PaaS", "SaaS"],
+                    correctIndex: 2, 
+                    a: "<b>เฉลย:</b> <b>SaaS (Software as a Service)</b>" 
+                },
+                { 
+                    id: 316, 
+                    type: "choice", 
+                    category: "Generic vs Custom", 
+                    q: "ข้อเสียเปรียบหลักของ Customized Software เมื่อเทียบกับ Generic Software คืออะไร?", 
+                    hint: "เรื่องเงินและเวลา",
+                    options: ["ฟังก์ชันการทำงานน้อยกว่า", "ราคาสูงกว่าและต้องรอเวลาพัฒนา", "หาคนดูแลรักษายากกว่า", "ความปลอดภัยต่ำกว่า"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> <b>ราคาสูงกว่า และ ต้องรอเวลาพัฒนา</b><br>(Generic ราคาถูกและใช้ได้ทันที)" 
+                },
+                { 
+                    id: 317, 
+                    type: "choice", 
+                    category: "Process Selection", 
+                    q: "โจทย์: 'สร้างระบบควบคุมเตาปฏิกรณ์นิวเคลียร์' ต้องการความปลอดภัยสูงสุด ห้ามพลาด Requirement นิ่ง <br><b>คำถาม:</b> ควรใช้ Model ใด?", 
+                    hint: "เน้นขั้นตอนชัดเจน ตรวจสอบได้",
+                    options: ["Agile", "Waterfall", "Prototyping", "Incremental"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> <b>Waterfall Model</b><br>เหมาะกับงานที่ต้องการความชัดเจน เป็นขั้นตอน และความปลอดภัยสูง" 
+                },
+                { 
+                    id: 318, 
+                    type: "choice", 
+                    category: "Agile vs Waterfall", 
+                    q: "หัวใจสำคัญของ Agile Model ที่แตกต่างจาก Waterfall คือเรื่องการส่งมอบงาน (Delivery) อย่างไร?", 
+                    hint: "ส่งทีเดียว vs ส่งเรื่อยๆ",
+                    options: ["ส่งมอบครั้งเดียวตอนจบ (Big Bang)", "ส่งมอบเป็นรอบสั้นๆ (Iterative)", "ส่งมอบเมื่อเอกสารครบถ้วน"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> ส่งมอบงานเป็น <b>รอบสั้นๆ (Iterative)</b> และใช้งานได้จริงบ่อยๆ เพื่อรับ Feedback ทันที" 
+                },
+                { 
+                    id: 319, 
+                    type: "choice", 
+                    category: "Spiral Model", 
+                    q: "จุดเด่นที่สุดของ Spiral Model ที่โมเดลอื่นเน้นน้อยกว่า คือการจัดการเรื่องใด?", 
+                    hint: "วนลูปเพื่อลด...",
+                    options: ["Documentation", "Risk Analysis (บริหารความเสี่ยง)", "User Interface Design", "Code Optimization"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> <b>การบริหารความเสี่ยง (Risk Analysis)</b>" 
+                },
+                { 
+                    id: 320, 
+                    type: "choice", 
+                    category: "CMMI Evidence", 
+                    q: "ในการประเมิน CMMI 'เอกสารการประชุม (Minutes of Meeting)' ถือเป็นหลักฐานประเภทใด?", 
+                    hint: "บอกว่ามีการกระทำเกิดขึ้น แต่ไม่ใช่ผลงานโดยตรง", 
+                    options: ["Direct Evidence", "Indirect Evidence", "Affirmation"],
+                    correctIndex: 1, 
+                    a: "<b>เฉลย:</b> <b>Indirect Evidence (หลักฐานทางอ้อม)</b><br>เพราะบ่งบอกว่ามีการกระทำเกิดขึ้น แต่ไม่ใช่ผลลัพธ์โดยตรงของงาน (Direct เช่น Source Code)" 
+                }
+            ]
+        };
+
+        let currentExamQueue = [];
+        let currentQIndex = 0;
+        let selectedChoiceIndex = null;
+
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
+            });
+            const target = document.getElementById(tabId + '-section');
+            target.classList.remove('hidden');
+            target.classList.add('block');
+
+            // Nav Styling
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.className = "px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50";
+            });
+            const activeBtn = document.getElementById('nav-' + tabId);
+            activeBtn.className = "px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm bg-white text-indigo-600 scale-105";
+
+            if (tabId === 'simulators') {
+                setTimeout(() => { if(window.beChart) window.beChart.resize(); if(window.evmChart) window.evmChart.resize(); }, 50);
+            }
+        }
+
+        // --- Exam System Logic ---
+        function startExam(set) {
+            if(set === 'set1') currentExamQueue = [...questionsDB.set1];
+            else if(set === 'set2') currentExamQueue = [...questionsDB.set2];
+            else if(set === 'set3') currentExamQueue = [...questionsDB.set3];
+            else if(set === 'all') currentExamQueue = [...questionsDB.set1, ...questionsDB.set2, ...questionsDB.set3];
+
+            currentQIndex = 0;
+            
+            document.getElementById('exam-menu').classList.add('hidden');
+            document.getElementById('exam-runner').classList.remove('hidden');
+            document.getElementById('exam-complete').classList.add('hidden');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = currentExamQueue[currentQIndex];
+            selectedChoiceIndex = null;
+            
+            // Animation Reset
+            const card = document.getElementById('flashcard');
+            card.classList.remove('card-enter', 'shake');
+            void card.offsetWidth;
+            card.classList.add('card-enter');
+            
+            // Render Content
+            document.getElementById('q-category').innerText = q.category;
+            document.getElementById('q-text').innerHTML = q.q;
+            document.getElementById('a-text').innerHTML = q.a;
+            document.getElementById('feedback-msg').classList.add('hidden');
+            document.getElementById('feedback-msg').innerText = '';
+            
+            // Setup Hint
+            document.getElementById('hint-area').classList.add('hidden');
+            document.getElementById('hint-text').innerHTML = q.hint || "ไม่มีใบ้สำหรับข้อนี้";
+
+            // Render Input based on Type
+            const inputContainer = document.getElementById('input-container');
+            inputContainer.innerHTML = ''; // Clear old inputs
+            
+            if (q.type === 'number') {
+                inputContainer.innerHTML = `
+                    <label class="block text-sm font-semibold text-slate-400 uppercase mb-2">พิมพ์คำตอบ (ตัวเลข):</label>
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="user-input-val" class="w-full md:w-1/2 p-4 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-400 focus:bg-white transition-all outline-none text-slate-700 text-lg font-bold" placeholder="ระบุตัวเลข">
+                        <span class="text-slate-500 font-medium">${q.unit || ''}</span>
+                    </div>
+                `;
+            } else if (q.type === 'choice') {
+                // Kahoot Style Grid Layout
+                let optionsHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">`;
+                
+                const kahootStyles = [
+                    { bg: 'bg-red-500', hover: 'hover:bg-red-600', icon: '▲' },
+                    { bg: 'bg-blue-500', hover: 'hover:bg-blue-600', icon: '◆' },
+                    { bg: 'bg-amber-500', hover: 'hover:bg-amber-600', icon: '●' },
+                    { bg: 'bg-green-500', hover: 'hover:bg-green-600', icon: '■' }
+                ];
+
+                q.options.forEach((opt, idx) => {
+                    const style = kahootStyles[idx % 4];
+                    optionsHtml += `
+                        <button id="choice-${idx}" onclick="selectChoice(${idx})" class="kahoot-btn w-full p-6 h-32 rounded-2xl ${style.bg} ${style.hover} text-white shadow-md flex items-center justify-start gap-4 text-left group">
+                            <div class="w-10 h-10 min-w-[2.5rem] rounded-full bg-black/20 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform">
+                                ${style.icon}
+                            </div>
+                            <span class="text-lg font-bold leading-snug drop-shadow-sm">${opt}</span>
+                        </button>
+                    `;
+                });
+                optionsHtml += `</div>`;
+                inputContainer.innerHTML = optionsHtml;
+            } else {
+                inputContainer.innerHTML = `
+                    <label class="block text-sm font-semibold text-slate-400 uppercase mb-2">คำตอบของคุณ:</label>
+                    <textarea id="user-input-val" rows="3" class="w-full p-4 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-indigo-400 focus:bg-white transition-all outline-none resize-none text-slate-700" placeholder="พิมพ์แนวคิดหรือคำตอบของคุณ..."></textarea>
+                `;
+            }
+            
+            document.getElementById('answer-area').classList.add('hidden');
+            
+            // Button Logic Update
+            document.getElementById('btn-prev').disabled = currentQIndex === 0;
+            
+            document.getElementById('btn-check').classList.remove('hidden');
+            document.getElementById('btn-check').innerText = (q.type === 'number' || q.type === 'choice') ? '✨ ตรวจคำตอบ' : '👁️ เฉลย / ตรวจทาน';
+            document.getElementById('btn-check').setAttribute('onclick', 'checkAnswer()');
+            
+            document.getElementById('btn-next').classList.add('hidden');
+            document.getElementById('btn-skip').classList.remove('hidden'); 
+            
+            // Progress Bar
+            document.getElementById('current-q-num').innerText = currentQIndex + 1;
+            document.getElementById('total-q-num').innerText = currentExamQueue.length;
+            const progress = ((currentQIndex) / currentExamQueue.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        }
+
+        function selectChoice(idx) {
+            // Deselect all
+            document.querySelectorAll('.kahoot-btn').forEach(el => {
+                el.classList.remove('selected');
+                el.classList.add('dimmed'); // Dim others
+            });
+
+            // Select clicked
+            const selectedEl = document.getElementById(`choice-${idx}`);
+            if (selectedEl) {
+                selectedEl.classList.add('selected');
+                selectedEl.classList.remove('dimmed');
+                selectedChoiceIndex = idx;
+            }
+        }
+
+        function toggleHint() {
+            const hintArea = document.getElementById('hint-area');
+            if (hintArea.classList.contains('hidden')) {
+                hintArea.classList.remove('hidden');
+            } else {
+                hintArea.classList.add('hidden');
+            }
+        }
+
+        function checkAnswer() {
+            const q = currentExamQueue[currentQIndex];
+            const feedback = document.getElementById('feedback-msg');
+            feedback.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700', 'bg-rose-50', 'text-rose-700');
+
+            // Logic for Number Questions
+            if (q.type === 'number') {
+                const userVal = document.getElementById('user-input-val').value.trim();
+                const numVal = parseFloat(userVal.replace(/,/g, ''));
+                if (!userVal) {
+                    document.getElementById('flashcard').classList.add('shake');
+                    feedback.innerText = "⚠️ กรุณากรอกตัวเลขคำตอบก่อนครับ";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-amber-50 text-amber-700";
+                    return;
+                }
+
+                const isCorrect = Math.abs(numVal - q.correctVal) < 0.1;
+                
+                if (isCorrect) {
+                    feedback.innerText = "✅ ถูกต้องครับ! เก่งมาก";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-emerald-50 text-emerald-700 animate-bounce";
+                    document.getElementById('user-input-val').classList.add('border-emerald-400', 'bg-emerald-50');
+                    revealAnswer();
+                } else {
+                    document.getElementById('flashcard').classList.add('shake');
+                    feedback.innerText = "❌ ยังไม่ถูกครับ ลองคิดดูอีกที หรือกดดูเฉลยเพื่อศึกษา";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-rose-50 text-rose-700";
+                    document.getElementById('user-input-val').classList.add('border-rose-300', 'bg-rose-50');
+                    
+                    const btn = document.getElementById('btn-check');
+                    btn.innerText = "🏳️ ยอมแพ้ / ดูเฉลย";
+                    btn.setAttribute('onclick', 'revealAnswer()');
+                }
+            }
+            // Logic for Choice Questions
+            else if (q.type === 'choice') {
+                if (selectedChoiceIndex === null) {
+                    document.getElementById('flashcard').classList.add('shake');
+                    feedback.innerText = "⚠️ กรุณาเลือกคำตอบก่อนครับ";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-amber-50 text-amber-700";
+                    return;
+                }
+
+                const isCorrect = selectedChoiceIndex === q.correctIndex;
+                const correctEl = document.getElementById(`choice-${q.correctIndex}`);
+                const selectedEl = document.getElementById(`choice-${selectedChoiceIndex}`);
+
+                if (isCorrect) {
+                    selectedEl.classList.add('correct-answer');
+                    selectedEl.classList.remove('selected'); // remove border to show glow
+                    feedback.innerText = "🎉 ถูกต้องครับ! สุดยอดเลย";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-emerald-50 text-emerald-700 animate-bounce";
+                    revealAnswer();
+                } else {
+                    document.getElementById('flashcard').classList.add('shake');
+                    selectedEl.classList.add('wrong-answer');
+                    feedback.innerText = "❌ ข้อที่เลือกยังไม่ถูกครับ";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-rose-50 text-rose-700";
+                    
+                    const btn = document.getElementById('btn-check');
+                    btn.innerText = "🏳️ ยอมแพ้ / ดูเฉลย";
+                    btn.setAttribute('onclick', 'revealAnswer()');
+                }
+            } 
+            // Logic for Text Questions
+            else {
+                 const userVal = document.getElementById('user-input-val').value.trim();
+                 if (!userVal) {
+                    feedback.innerText = "💡 ลองพิมพ์คำตอบของคุณก่อนกดดูเฉลยนะครับ";
+                    feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-indigo-50 text-indigo-700";
+                    return;
+                }
+                revealAnswer();
+            }
+        }
+
+        function revealAnswer() {
+            const q = currentExamQueue[currentQIndex];
+            
+            // If Choice Question
+            if (q.type === 'choice') {
+                document.querySelectorAll('.kahoot-btn').forEach((el, idx) => {
+                    if (idx === q.correctIndex) {
+                        el.classList.add('correct-answer');
+                        el.classList.remove('dimmed');
+                    } else {
+                        el.classList.add('dimmed');
+                        el.classList.remove('selected');
+                    }
+                    el.onclick = null; // Disable clicks
+                });
+            }
+
+            document.getElementById('answer-area').classList.remove('hidden');
+            document.getElementById('btn-check').classList.add('hidden');
+            document.getElementById('btn-next').classList.remove('hidden');
+            document.getElementById('btn-skip').classList.add('hidden');
+
+             const progress = ((currentQIndex + 1) / currentExamQueue.length) * 100;
+             document.getElementById('progress-bar').style.width = progress + '%';
+        }
+
+        function nextQuestion() {
+            if (currentQIndex < currentExamQueue.length - 1) {
+                currentQIndex++;
+                loadQuestion();
+            } else {
+                finishExam();
+            }
+        }
+        
+        function prevQuestion() {
+            if (currentQIndex > 0) {
+                currentQIndex--;
+                loadQuestion();
+            }
+        }
+
+        function skipQuestion() {
+            nextQuestion();
+        }
+
+        function finishExam() {
+            document.getElementById('exam-runner').classList.add('hidden');
+            document.getElementById('exam-complete').classList.remove('hidden');
+        }
+
+        function exitExam() {
+            document.getElementById('exam-runner').classList.add('hidden');
+            document.getElementById('exam-complete').classList.add('hidden');
+            document.getElementById('exam-menu').classList.remove('hidden');
+        }
+
+        // --- Chart Initialization (Same as before) ---
+        let beChart, evmChart;
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Sarabun', sans-serif";
+            Chart.defaults.color = '#64748b';
+            
+            // 1. Break-Even Chart
+            const ctxBE = document.getElementById('beChart').getContext('2d');
+            beChart = new Chart(ctxBE, {
+                type: 'line',
+                data: {
+                    labels: [0, 1000, 2000, 3000, 4000, 5000],
+                    datasets: [
+                        { label: 'Total Cost', data: [], borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.05)', borderWidth: 2, tension: 0, fill: true, pointRadius: 0 },
+                        { label: 'Revenue', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderWidth: 2, tension: 0, fill: true, pointRadius: 0 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { x: { grid: { display: false }, title: { display: true, text: 'Quantity' } }, y: { grid: { color: '#f1f5f9' } } } }
+            });
+
+            // 2. EVM Chart
+            const ctxEVM = document.getElementById('evmChart').getContext('2d');
+            evmChart = new Chart(ctxEVM, {
+                type: 'bar',
+                data: {
+                    labels: ['PV', 'EV', 'AC'],
+                    datasets: [{ label: 'Value (THB)', data: [], backgroundColor: ['#6366f1', '#10b981', '#f43f5e'], borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } }
+            });
+
+            updateBEChart();
+            updateEVMChart();
+        }
+
+        function updateBEChart() {
+            const fc = parseInt(document.getElementById('input-fc').value);
+            const p = parseInt(document.getElementById('input-p').value);
+            const v = parseInt(document.getElementById('input-v').value);
+            
+            document.getElementById('val-fc').innerText = fc.toLocaleString();
+            document.getElementById('val-p').innerText = p.toLocaleString();
+            document.getElementById('val-v').innerText = v.toLocaleString();
+
+            let bep = p > v ? Math.ceil(fc / (p - v)) : 0;
+            document.getElementById('result-bep').innerText = bep > 0 ? bep.toLocaleString() : "Loss";
+            
+            const maxQ = bep > 0 ? Math.ceil(bep * 1.5) : 5000;
+            const step = maxQ / 5;
+            const labels = []; const dataCost = []; const dataRev = [];
+
+            for(let i=0; i<=5; i++) {
+                const q = Math.round(i * step);
+                labels.push(q);
+                dataCost.push(fc + (q * v));
+                dataRev.push(q * p);
+            }
+            beChart.data.labels = labels;
+            beChart.data.datasets[0].data = dataCost;
+            beChart.data.datasets[1].data = dataRev;
+            beChart.update();
+        }
+
+        function updateEVMChart() {
+            const bac = parseInt(document.getElementById('input-bac').value);
+            const ac = parseInt(document.getElementById('input-ac').value);
+            const planPct = parseInt(document.getElementById('input-planned').value);
+            const compPct = parseInt(document.getElementById('input-complete').value);
+
+            document.getElementById('val-planned').innerText = planPct + '%';
+            document.getElementById('val-complete').innerText = compPct + '%';
+
+            const pv = bac * (planPct / 100);
+            const ev = bac * (compPct / 100);
+            const spi = pv === 0 ? 0 : (ev / pv).toFixed(2);
+            const cpi = ac === 0 ? 0 : (ev / ac).toFixed(2);
+
+            document.getElementById('result-spi').innerText = spi;
+            document.getElementById('result-cpi').innerText = cpi;
+
+            evmChart.data.datasets[0].data = [pv, ev, ac];
+            evmChart.update();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            ['input-fc', 'input-p', 'input-v'].forEach(id => document.getElementById(id).addEventListener('input', updateBEChart));
+            ['input-bac', 'input-ac', 'input-planned', 'input-complete'].forEach(id => document.getElementById(id).addEventListener('input', updateEVMChart));
+        });
+
+    </script>
+</body>
+</html>
