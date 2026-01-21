@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Software Engineering Economics - Interactive Study Guide</title>
+    <!-- Add Favicon using Emoji SVG -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -87,28 +90,28 @@
 <body class="text-slate-600 min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-700">
 
     <!-- Header / Navigation -->
-    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 transition-all duration-300">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                        <span class="text-xl">📊</span>
+    <header id="main-header" class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 transition-all duration-300">
+        <div id="header-container" class="max-w-5xl mx-auto px-4 sm:px-6 py-4 transition-all duration-300">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+                <div class="flex items-center gap-3 self-start md:self-auto">
+                    <div id="header-logo" class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 transition-all duration-300">
+                        <span class="text-xl transition-all duration-300">📊</span>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-slate-800 tracking-tight">Software Economics</h1>
-                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Interactive Exam Prep</p>
+                        <h1 id="header-title" class="text-xl font-bold text-slate-800 tracking-tight transition-all duration-300">Software Economics</h1>
+                        <p id="header-subtitle" class="text-xs font-medium text-slate-400 uppercase tracking-wide transition-all duration-300">Interactive Exam Prep</p>
                     </div>
                 </div>
                 
-                <nav class="flex p-1 bg-slate-100/80 rounded-2xl border border-slate-200/50">
-                    <button onclick="switchTab('formulas')" id="nav-formulas" class="px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm bg-white text-indigo-600">
+                <nav id="nav-container" class="flex p-1 bg-slate-100/80 rounded-2xl border border-slate-200/50 transition-all duration-300">
+                    <button onclick="switchTab('formulas')" id="nav-formulas" class="rounded-xl font-semibold transition-all duration-200 shadow-sm bg-white text-indigo-600">
                         สูตรคำนวณ
                     </button>
-                    <button onclick="switchTab('exam')" id="nav-exam" class="px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50">
-                        ตะลุยโจทย์ (Flashcards)
+                    <button onclick="switchTab('exam')" id="nav-exam" class="rounded-xl font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50">
+                        ตะลุยโจทย์
                     </button>
-                    <button onclick="switchTab('simulators')" id="nav-simulators" class="px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50">
-                        ห้องทดลองกราฟ
+                    <button onclick="switchTab('simulators')" id="nav-simulators" class="rounded-xl font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50">
+                        ห้องทดลอง
                     </button>
                 </nav>
             </div>
@@ -502,12 +505,68 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-8 mt-auto">
         <div class="max-w-5xl mx-auto px-4 text-center">
-            <p class="text-sm font-semibold text-slate-700">© 2024 Software Engineering Economics</p>
+            <p class="text-sm font-semibold text-slate-700">© 2026 Software Engineering Economics</p>
             <p class="mt-2 text-xs text-slate-400">Designed for interactive learning</p>
+            <p class="mt-1 text-xs text-slate-400">Generated code from Gemini by Manutsawin Sarothon</p>
         </div>
     </footer>
 
     <script>
+        // --- Navbar Shrink Logic & State ---
+        const state = {
+            currentTab: 'formulas'
+        };
+
+        function updateNavUI() {
+            const isScrolled = window.scrollY > 20;
+            const container = document.getElementById('header-container');
+            const logo = document.getElementById('header-logo');
+            const title = document.getElementById('header-title');
+            const subtitle = document.getElementById('header-subtitle');
+            
+            // Header Shrink
+            if (isScrolled) {
+                container.classList.replace('py-4', 'py-2');
+                logo.classList.replace('w-10', 'w-8');
+                logo.classList.replace('h-10', 'h-8');
+                title.classList.replace('text-xl', 'text-lg');
+                subtitle.classList.add('hidden');
+            } else {
+                container.classList.replace('py-2', 'py-4');
+                logo.classList.replace('w-8', 'w-10');
+                logo.classList.replace('h-8', 'h-10');
+                title.classList.replace('text-lg', 'text-xl');
+                subtitle.classList.remove('hidden');
+            }
+
+            // Nav Buttons Shrink & Active State
+            ['formulas', 'exam', 'simulators'].forEach(tab => {
+                const btn = document.getElementById(`nav-${tab}`);
+                if(!btn) return;
+
+                // Base classes
+                let classes = "transition-all duration-200 ";
+                
+                // Size logic
+                if (isScrolled) {
+                    classes += "px-3 py-1.5 text-xs ";
+                } else {
+                    classes += "px-5 py-2 text-sm ";
+                }
+
+                // Active state logic
+                if (state.currentTab === tab) {
+                    classes += "rounded-xl font-semibold shadow-sm bg-white text-indigo-600 scale-105";
+                } else {
+                    classes += "rounded-xl font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200/50";
+                }
+
+                btn.className = classes;
+            });
+        }
+
+        document.addEventListener('scroll', updateNavUI);
+
         // --- Questions Data (Enhanced with Scenarios, Types, and HINTS) ---
         const questionsDB = {
             set1: [
@@ -912,8 +971,10 @@
         let currentQIndex = 0;
         let selectedChoiceIndex = null;
 
-        // --- Navigation Logic ---
         function switchTab(tabId) {
+            state.currentTab = tabId; // Update state
+            updateNavUI(); // Force update UI
+
             document.querySelectorAll('.tab-content').forEach(el => {
                 el.classList.add('hidden');
                 el.classList.remove('block');
@@ -921,13 +982,6 @@
             const target = document.getElementById(tabId + '-section');
             target.classList.remove('hidden');
             target.classList.add('block');
-
-            // Nav Styling
-            document.querySelectorAll('nav button').forEach(btn => {
-                btn.className = "px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-700 hover:bg-slate-200/50";
-            });
-            const activeBtn = document.getElementById('nav-' + tabId);
-            activeBtn.className = "px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm bg-white text-indigo-600 scale-105";
 
             if (tabId === 'simulators') {
                 setTimeout(() => { if(window.beChart) window.beChart.resize(); if(window.evmChart) window.evmChart.resize(); }, 50);
@@ -954,26 +1008,22 @@
             const q = currentExamQueue[currentQIndex];
             selectedChoiceIndex = null;
             
-            // Animation Reset
             const card = document.getElementById('flashcard');
             card.classList.remove('card-enter', 'shake');
             void card.offsetWidth;
             card.classList.add('card-enter');
             
-            // Render Content
             document.getElementById('q-category').innerText = q.category;
             document.getElementById('q-text').innerHTML = q.q;
             document.getElementById('a-text').innerHTML = q.a;
             document.getElementById('feedback-msg').classList.add('hidden');
             document.getElementById('feedback-msg').innerText = '';
             
-            // Setup Hint
             document.getElementById('hint-area').classList.add('hidden');
             document.getElementById('hint-text').innerHTML = q.hint || "ไม่มีใบ้สำหรับข้อนี้";
 
-            // Render Input based on Type
             const inputContainer = document.getElementById('input-container');
-            inputContainer.innerHTML = ''; // Clear old inputs
+            inputContainer.innerHTML = ''; 
             
             if (q.type === 'number') {
                 inputContainer.innerHTML = `
@@ -984,7 +1034,6 @@
                     </div>
                 `;
             } else if (q.type === 'choice') {
-                // Kahoot Style Grid Layout
                 let optionsHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">`;
                 
                 const kahootStyles = [
@@ -1016,7 +1065,6 @@
             
             document.getElementById('answer-area').classList.add('hidden');
             
-            // Button Logic Update
             document.getElementById('btn-prev').disabled = currentQIndex === 0;
             
             document.getElementById('btn-check').classList.remove('hidden');
@@ -1026,7 +1074,6 @@
             document.getElementById('btn-next').classList.add('hidden');
             document.getElementById('btn-skip').classList.remove('hidden'); 
             
-            // Progress Bar
             document.getElementById('current-q-num').innerText = currentQIndex + 1;
             document.getElementById('total-q-num').innerText = currentExamQueue.length;
             const progress = ((currentQIndex) / currentExamQueue.length) * 100;
@@ -1034,13 +1081,11 @@
         }
 
         function selectChoice(idx) {
-            // Deselect all
             document.querySelectorAll('.kahoot-btn').forEach(el => {
                 el.classList.remove('selected');
-                el.classList.add('dimmed'); // Dim others
+                el.classList.add('dimmed'); 
             });
 
-            // Select clicked
             const selectedEl = document.getElementById(`choice-${idx}`);
             if (selectedEl) {
                 selectedEl.classList.add('selected');
@@ -1063,7 +1108,6 @@
             const feedback = document.getElementById('feedback-msg');
             feedback.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700', 'bg-rose-50', 'text-rose-700');
 
-            // Logic for Number Questions
             if (q.type === 'number') {
                 const userVal = document.getElementById('user-input-val').value.trim();
                 const numVal = parseFloat(userVal.replace(/,/g, ''));
@@ -1092,7 +1136,6 @@
                     btn.setAttribute('onclick', 'revealAnswer()');
                 }
             }
-            // Logic for Choice Questions
             else if (q.type === 'choice') {
                 if (selectedChoiceIndex === null) {
                     document.getElementById('flashcard').classList.add('shake');
@@ -1107,7 +1150,7 @@
 
                 if (isCorrect) {
                     selectedEl.classList.add('correct-answer');
-                    selectedEl.classList.remove('selected'); // remove border to show glow
+                    selectedEl.classList.remove('selected'); 
                     feedback.innerText = "🎉 ถูกต้องครับ! สุดยอดเลย";
                     feedback.className = "mt-4 text-center text-lg font-bold p-3 rounded-lg shadow-sm bg-emerald-50 text-emerald-700 animate-bounce";
                     revealAnswer();
@@ -1122,7 +1165,6 @@
                     btn.setAttribute('onclick', 'revealAnswer()');
                 }
             } 
-            // Logic for Text Questions
             else {
                  const userVal = document.getElementById('user-input-val').value.trim();
                  if (!userVal) {
@@ -1137,7 +1179,6 @@
         function revealAnswer() {
             const q = currentExamQueue[currentQIndex];
             
-            // If Choice Question
             if (q.type === 'choice') {
                 document.querySelectorAll('.kahoot-btn').forEach((el, idx) => {
                     if (idx === q.correctIndex) {
@@ -1147,7 +1188,7 @@
                         el.classList.add('dimmed');
                         el.classList.remove('selected');
                     }
-                    el.onclick = null; // Disable clicks
+                    el.onclick = null; 
                 });
             }
 
